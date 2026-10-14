@@ -11,10 +11,8 @@ router = APIRouter(prefix="/solicitudes", tags=["solicitudes"])
 Nickname = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=20)]
 RESERVADOS = {"anfitrión", "anfitrion", "sala"}
 
-
 class NuevaSolicitud(BaseModel):
     nickname: Nickname
-
 
 @router.post("", status_code=201)
 async def solicitar(nueva: NuevaSolicitud):
@@ -25,7 +23,6 @@ async def solicitar(nueva: NuevaSolicitud):
     # verá en la bienvenida la próxima vez que entre.
     await sala.avisar_al_anfitrion({"tipo": "solicitud", "id": s["id"], "nickname": s["nickname"]})
     return s
-
 
 @router.get("/{sid}")
 def consultar(sid: str):

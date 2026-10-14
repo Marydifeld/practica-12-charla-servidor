@@ -22,7 +22,9 @@ conectados: dict[WebSocket, str] = {}
 
 def quien_es(ws: WebSocket) -> str | None:
     """El nickname de quien abre la conexión, por su token. None = no tiene permiso."""
-    token = ws.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    token = ws.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    print(f"Got Token: {token}")
+
     if not token:
         return None
     # compare_digest tarda lo mismo aunque falle en la primera letra: no regala pistas.
@@ -47,6 +49,7 @@ async def avisar_al_anfitrion(evento: dict) -> None:
 async def chat(ws: WebSocket):
     yo = quien_es(ws)
     if yo is None:
+
         # Cerrar ANTES de aceptar: el cliente recibe un 403 y no llega a entrar.
         await ws.close(code=1008)
         return

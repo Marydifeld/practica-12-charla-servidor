@@ -10,7 +10,6 @@ import secrets
 import sqlite3
 import time
 
-
 class Datos:
     def __init__(self, ruta: str):
         # Un solo hilo atiende todo (el del servidor), pero las pruebas lo usan
@@ -99,7 +98,6 @@ class Datos:
             "SELECT * FROM mensajes ORDER BY id DESC LIMIT ?", (cuantos,)
         ).fetchall()
         return [dict(f) for f in reversed(filas)]
-
 
 # La base de toda la app. Las pruebas la cambian por una en memoria.
 db = Datos(os.environ.get("RUTA_DB", "/datos/charla.db"))

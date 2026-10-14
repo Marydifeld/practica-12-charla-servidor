@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "El servidor de Charla (Práctica 12 de TC2007B): una sala de chat por WebSocket que vive en tu computadora."
 requires-python = ">=3.12"
 dependencies = [
+    "boto3>=1.43.113",
     "fastapi==0.141.1",
+    "pydantic-settings>=2.15.0",
+    "python-multipart>=0.0.32",
     "uvicorn[standard]==0.53.0",
 ]
 

@@ -1,0 +1,57 @@
+# La sala completa:
+#   docker compose up -d --build     el servidor (http://localhost:8000) y el túnel
+#   docker compose logs -f api       lo que va pasando en la sala
+services:
+  api:
+    build: .
+    container_name: app-api
+    env_file: .env
+    # --reload + los volúmenes: editas app/ en tu máquina y el servidor se reinicia solo.
+    command: ["uv", "run", "--no-sync", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./app:/code/app
+      - ./tests:/code/tests
+      - ./herramientas:/code/herramientas
+      - datos:/datos
+    environment:
+      S3_ENDPOINT: http://s3-storage:9000
+    # Solo en 127.0.0.1: tu máquina y el emulador (10.0.2.2) llegan; el resto del wifi, no.
+    # Tus compañeros entran por el túnel.
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  tunel:
+    container_name: cdn-tunnel
+    image: cloudflare/cloudflared:2026.9.3
+    # Una dirección https://….trycloudflare.com que llega a `api` desde cualquier red.
+    # http2 porque muchas redes bloquean QUIC (UDP). --metrics publica /quicktunnel,
+    # donde la API lee esa dirección para el QR.
+    command: ["tunnel", "--no-autoupdate", "--protocol", "http2", "--metrics", "0.0.0.0:2000", "--url", "http://api:8000"]
+    depends_on:
+      - api
+
+  almacen:
+    image: rustfs/rustfs:1.0.1
+    container_name: s3-storage
+    environment:
+      # Las mismas llaves del .env: RustFS las toma como su administrador y la API entra con ellas.
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY}
+      RUSTFS_CONSOLE_ENABLE: "true"
+    volumes:
+      - objetos:/data
+    # La consola web (9001) es una página que le habla a la API S3 (9000) desde tu
+    # navegador: por eso se publican las dos. Solo en 127.0.0.1: el resto del wifi no llega.
+    # La app NUNCA habla con el almacén: todo pasa por `api`.
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+      interval: 2s
+      retries: 30
+
+volumes:
+  # La base de la sala. Sobrevive a `docker compose down`; `down -v` la borra.
+  datos:
+  objetos:
